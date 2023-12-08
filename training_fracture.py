@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
+import tf_slim as slim
 
 
 # load images to build and train the model
@@ -79,12 +80,10 @@ def trainPart(part):
 
     # now we have 10% test, 72% training and 18% validation
     train_generator = tf.keras.preprocessing.image.ImageDataGenerator(horizontal_flip=True,
-                                                                      preprocessing_function=tf.keras.applications.resnet50.preprocess_input,
                                                                       validation_split=0.2)
 
     # use ResNet50 architecture
-    test_generator = tf.keras.preprocessing.image.ImageDataGenerator(
-        preprocessing_function=tf.keras.applications.resnet50.preprocess_input)
+    test_generator = tf.keras.preprocessing.image.ImageDataGenerator()
 
     train_images = train_generator.flow_from_dataframe(
         dataframe=train_df,
@@ -124,11 +123,7 @@ def trainPart(part):
     )
 
     # we use rgb 3 channels and 224x224 pixels images, use feature extracting , and average pooling
-    pretrained_model = tf.keras.applications.resnet50.ResNet50(
-        input_shape=(224, 224, 3),
-        include_top=False,
-        weights='imagenet',
-        pooling='avg')
+    pretrained_model = tf.keras.applications.MobileNetV3Large()
 
     # for faster performance
     pretrained_model.trainable = False
@@ -151,7 +146,7 @@ def trainPart(part):
     history = model.fit(train_images, validation_data=val_images, epochs=25, callbacks=[callbacks])
 
     # save model to this path
-    model.save(THIS_FOLDER + "/weights/ResNet50_" + part + "_frac.h5")
+    model.save(THIS_FOLDER + "/weights/MobileNetV3_" + part + "_frac.h5")
     results = model.evaluate(test_images, verbose=0)
     print(part + " Results:")
     print(results)
@@ -182,7 +177,6 @@ def trainPart(part):
     my_file = os.path.join(THIS_FOLDER, "./plots/FractureDetection/" + part + "/_Loss.jpeg")
     figAcc.savefig(my_file)
     plt.clf()
-
 
 # run the function and create model for each parts in the array
 categories_parts = ["Elbow", "Hand", "Shoulder"]
