@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.applications import MobileNetV3Large
 
 
 # load images to build and train the model
@@ -74,11 +75,11 @@ train_df, test_df = train_test_split(images, train_size=0.9, shuffle=True, rando
 # now we have 10% test, 72% training and 18% validation
 
 train_generator = tf.keras.preprocessing.image.ImageDataGenerator(
-    preprocessing_function=tf.keras.applications.resnet50.preprocess_input,
+    preprocessing_function=tf.keras.applications.mobilenet_v3.preprocess_input,
     validation_split=0.2)
 
 test_generator = tf.keras.preprocessing.image.ImageDataGenerator(
-    preprocessing_function=tf.keras.applications.resnet50.preprocess_input)
+    preprocessing_function=tf.keras.applications.mobilenet_v3.preprocess_input)
 
 train_images = train_generator.flow_from_dataframe(
     dataframe=train_df,
@@ -118,11 +119,7 @@ test_images = test_generator.flow_from_dataframe(
 )
 
 # we use rgb 3 channels and 224x224 pixels images, use feature extracting , and average pooling
-pretrained_model = tf.keras.applications.resnet50.ResNet50(
-    input_shape=(224, 224, 3),
-    include_top=False,
-    weights='imagenet',
-    pooling='avg')
+pretrained_model = MobileNetV3Large(weights='imagenet', include_top=False, input_shape=(224, 224, 3), pooling='avg')
 
 # for faster performance
 pretrained_model.trainable = False
@@ -143,7 +140,7 @@ history = model.fit(train_images, validation_data=val_images, epochs=25,
                     callbacks=[callbacks])
 
 # save model to this path
-model.save(THIS_FOLDER + "/weights/ResNet50_BodyParts.h5")
+model.save(THIS_FOLDER + "/weights/MobileNetV3_BodyParts.h5")
 results = model.evaluate(test_images, verbose=0)
 print(results)
 print(f"Test Accuracy: {np.round(results[1] * 100, 2)}%")
