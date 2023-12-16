@@ -55,7 +55,7 @@ labels = []
 filepaths = []
 
 # add labels for dataframe for each category 0-Elbow, 1-Hand, 2-Shoulder
-Labels = ["Elbow", "Hand", "Shoulder"]
+Labels = [ "Hand"]
 for row in data:
     labels.append(row['label'])
     filepaths.append(row['image_path'])
