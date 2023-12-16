@@ -33,7 +33,7 @@ def load_path(path):
     return dataset
 
 
-categories_parts = ["Elbow", "Hand", "Shoulder"]
+categories_parts = [ "Hand"]
 categories_fracture = ['fractured', 'normal']
 
 
