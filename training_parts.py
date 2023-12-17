@@ -1,3 +1,4 @@
+
 import numpy as np
 import pandas as pd
 import os.path
@@ -7,53 +8,73 @@ import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.applications import MobileNetV3Large
 
-# Load only "Hand" data
-def load_hand_data(path):
+
+# load images to build and train the model
+#                       ....                                     /    img1.jpg
+#             test      Hand            patient0000   positive  --   img2.png
+#           /                /                         \    .....
+#   Dataset   -         Elbow  ------   patient0001
+#           \ train               \         /                           img1.png
+#                       Shoulder        patient0002     negative --      img2.jpg
+#                       ....                   \
+#
+def load_path(path):
+    """
+    load X-ray dataset
+    """
     dataset = []
     for folder in os.listdir(path):
-        folder = os.path.join(path, folder)
+        folder = path + '/' + str(folder)
         if os.path.isdir(folder):
             for body in os.listdir(folder):
-                if body == "Hand":  # Include only "Hand" category
-                    path_p = os.path.join(folder, body)
-                    for id_p in os.listdir(path_p):
-                        patient_id = id_p
-                        path_id = os.path.join(path_p, id_p)
-                        for lab in os.listdir(path_id):
-                            if lab.split('_')[-1] == 'positive':
-                                label = 'fractured'
-                            elif lab.split('_')[-1] == 'negative':
-                                label = 'normal'
-                            path_l = os.path.join(path_id, lab)
-                            for img in os.listdir(path_l):
-                                img_path = os.path.join(path_l, img)
-                                dataset.append({
-                                    'label': label,
+                path_p = folder + '/' + str(body)
+                for id_p in os.listdir(path_p):
+                    patient_id = id_p
+                    path_id = path_p + '/' + str(id_p)
+                    for lab in os.listdir(path_id):
+                        if lab.split('_')[-1] == 'positive':
+                            label = 'fractured'
+                        elif lab.split('_')[-1] == 'negative':
+                            label = 'normal'
+                        path_l = path_id + '/' + str(lab)
+                        for img in os.listdir(path_l):
+                            img_path = path_l + '/' + str(img)
+                            dataset.append(
+                                {
+                                    'label': body,
                                     'image_path': img_path
-                                })
+                                }
+                            )
     return dataset
 
-# Load only "Hand" data from path
+
+# load data from path
 THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
-image_dir = os.path.join(THIS_FOLDER, 'Dataset')
-data = load_hand_data(image_dir)
+image_dir = THIS_FOLDER + '/Dataset'
+data = load_path(image_dir)
+labels = []
+filepaths = []
 
-# Update Labels
-Labels = ["fractured", "normal"]
-
-# Convert to DataFrame
-labels = [row['label'] for row in data]
-filepaths = [row['image_path'] for row in data]
+# add labels for dataframe for each category 0-Elbow, 1-Hand, 2-Shoulder
+Labels = ["Elbow", "Hand", "Shoulder"]
+for row in data:
+    labels.append(row['label'])
+    filepaths.append(row['image_path'])
 
 filepaths = pd.Series(filepaths, name='Filepath').astype(str)
 labels = pd.Series(labels, name='Label')
 
 images = pd.concat([filepaths, labels], axis=1)
 
-# Split dataset: 10% test, 90% train (90% train will split to 20% validation and 80% train)
+# split all dataset 10% test, 90% train (after that the 90% train will split to 20% validation and 80% train
 train_df, test_df = train_test_split(images, train_size=0.9, shuffle=True, random_state=1)
 
-# ImageDataGenerators
+# each generator to process and convert the filepaths into image arrays,
+# and the labels into one-hot encoded labels.
+# The resulting generators can then be used to train and evaluate a deep learning model.
+
+# now we have 10% test, 72% training and 18% validation
+
 train_generator = tf.keras.preprocessing.image.ImageDataGenerator(
     preprocessing_function=tf.keras.applications.mobilenet_v3.preprocess_input,
     validation_split=0.2
@@ -63,7 +84,6 @@ test_generator = tf.keras.preprocessing.image.ImageDataGenerator(
     preprocessing_function=tf.keras.applications.mobilenet_v3.preprocess_input
 )
 
-# Flow from DataFrame
 train_images = train_generator.flow_from_dataframe(
     dataframe=train_df,
     x_col='Filepath',
