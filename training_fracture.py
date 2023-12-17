@@ -152,7 +152,7 @@ def trainPart(part):
     model.compile(optimizer=Adam(learning_rate=0.00001), loss='categorical_crossentropy', metrics=['accuracy'])
     callbacks = [
         tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
-        tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=1e-7)
+        tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=1e-10)
     ]
 
     history = model.fit(train_images, validation_data=val_images, epochs=50, callbacks=callbacks, batch_size=32)
