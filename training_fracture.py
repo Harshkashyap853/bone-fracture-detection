@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 import tf_slim as slim
-
+from sklearn.metrics import accuracy_score
 
 # load images to build and train the model
 #                       ....                                     /    img1.jpg
@@ -71,6 +71,7 @@ def create_model():
     x = pretrained_model.output
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dense(512, activation='relu')(x)
+    x = tf.keras.layers.Dropout(0.5)(x)
     x = tf.keras.layers.Dense(256, activation='relu')(x)
    
     x = tf.keras.layers.Dense(128, activation='relu')(x)
