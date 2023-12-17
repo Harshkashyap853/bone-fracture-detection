@@ -52,16 +52,44 @@ def load_path(path, part):
     return dataset
 
 
-# this function get part and know what kind of part to train, save model and save plots
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+import tensorflow as tf
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.applications import MobileNetV3Large
+
+
+
+def create_model():
+    pretrained_model = MobileNetV3Large(weights='imagenet', include_top=False, input_shape=(224, 224, 3), pooling=None)
+
+    pretrained_model.trainable = True
+
+    x = pretrained_model.output
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    x = tf.keras.layers.Dropout(0.5)(x)
+    x = tf.keras.layers.Dense(512, activation='relu')(x)
+    x = tf.keras.layers.Dropout(0.5)(x)
+    x = tf.keras.layers.Dense(256, activation='relu')(x)
+   
+    x = tf.keras.layers.Dense(128, activation='relu')(x)
+    x = tf.keras.layers.Dense(64, activation='relu')(x)
+    x = tf.keras.layers.Dense(32, activation='relu')(x)
+    outputs = tf.keras.layers.Dense(2, activation='softmax')(x)
+
+    model = tf.keras.Model(inputs=pretrained_model.input, outputs=outputs)
+    return model
+
 def trainPart(part):
-    # categories = ['fractured', 'normal']
     THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     image_dir = THIS_FOLDER + '/Dataset/'
     data = load_path(image_dir, part)
     labels = []
     filepaths = []
 
-    # add labels for dataframe for each category 0-fractured, 1- normal
     for row in data:
         labels.append(row['label'])
         filepaths.append(row['image_path'])
@@ -71,19 +99,17 @@ def trainPart(part):
 
     images = pd.concat([filepaths, labels], axis=1)
 
-    # split all dataset 10% test, 90% train (after that the 90% train will split to 20% validation and 80% train
     train_df, test_df = train_test_split(images, train_size=0.9, shuffle=True, random_state=1)
 
-    # each generator to process and convert the filepaths into image arrays,
-    # and the labels into one-hot encoded labels.
-    # The resulting generators can then be used to train and evaluate a deep learning model.
+    train_generator = tf.keras.preprocessing.image.ImageDataGenerator(
+        horizontal_flip=True,
+        preprocessing_function=tf.keras.applications.mobilenet_v3.preprocess_input,
+        validation_split=0.2
+    )
 
-    # now we have 10% test, 72% training and 18% validation
-    train_generator = tf.keras.preprocessing.image.ImageDataGenerator(horizontal_flip=True,
-                                                                      validation_split=0.2)
-
-    # use ResNet50 architecture
-    test_generator = tf.keras.preprocessing.image.ImageDataGenerator()
+    test_generator = tf.keras.preprocessing.image.ImageDataGenerator(
+        preprocessing_function=tf.keras.applications.mobilenet_v3.preprocess_input
+    )
 
     train_images = train_generator.flow_from_dataframe(
         dataframe=train_df,
@@ -122,63 +148,40 @@ def trainPart(part):
         shuffle=False
     )
 
-    # we use rgb 3 channels and 224x224 pixels images, use feature extracting , and average pooling
-    pretrained_model = tf.keras.applications.MobileNetV3Large()
-
-    # for faster performance
-    pretrained_model.trainable = False
-
-    inputs = pretrained_model.input
-    x = tf.keras.layers.Dense(256, activation='relu')(pretrained_model.output)
-    x = tf.keras.layers.Dense(128, activation='relu')(x)
-
-    # outputs Dense '2' because of 2 classes, fratured and normal
-    outputs = tf.keras.layers.Dense(2, activation='softmax')(x)
-    model = tf.keras.Model(inputs, outputs)
-    # print(model.summary())
+    model = create_model()
     print("-------Training " + part + "-------")
 
-    # Adam optimizer with low learning rate for better accuracy
-    model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(learning_rate=0.00001), loss='categorical_crossentropy', metrics=['accuracy'])
+    callbacks = [
+        tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
+        tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=1e-7)
+    ]
 
-    # early stop when our model is over fit or vanishing gradient, with restore best values
-    callbacks = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
-    history = model.fit(train_images, validation_data=val_images, epochs=25, callbacks=[callbacks])
+    history = model.fit(train_images, validation_data=val_images, epochs=50, callbacks=callbacks, batch_size=32)
 
-    # save model to this path
-    model.save(THIS_FOLDER + "/weights/MobileNetV3_" + part + "_frac.h5")
+    model.save("weightsMobileNetV3_hand_frac.keras")
     results = model.evaluate(test_images, verbose=0)
     print(part + " Results:")
     print(results)
     print(f"Test Accuracy: {np.round(results[1] * 100, 2)}%")
 
-    # create plots for accuracy and save it
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
-    plt.title('model accuracy')
-    plt.ylabel('accuracy')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    # plt.show()
-    figAcc = plt.gcf()
-    my_file = os.path.join(THIS_FOLDER, "./plots/FractureDetection/" + part + "/_Accuracy.jpeg")
-    figAcc.savefig(my_file)
-    plt.clf()
+    plt.title('Model Accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
 
-    # create plots for loss and save it
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    # plt.show()
-    figAcc = plt.gcf()
-    my_file = os.path.join(THIS_FOLDER, "./plots/FractureDetection/" + part + "/_Loss.jpeg")
-    figAcc.savefig(my_file)
-    plt.clf()
+    plt.title('Model Loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.show()
 
-# run the function and create model for each parts in the array
-categories_parts = ["Elbow", "Hand", "Shoulder"]
+# Run the function for each part in the array
+categories_parts = [ "Hand"]
 for category in categories_parts:
     trainPart(category)
