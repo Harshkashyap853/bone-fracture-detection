@@ -128,7 +128,7 @@ pretrained_model.trainable = False
 inputs = pretrained_model.input
 x = tf.keras.layers.Dense(128, activation='relu')(pretrained_model.output)
 x = tf.keras.layers.Dense(50, activation='relu')(x)
-outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)  # Binary classification
+outputs = tf.keras.layers.Dense(2, activation='softmax')(x)  # Binary classification
 model = tf.keras.Model(inputs, outputs)
 print(model.summary())
 
