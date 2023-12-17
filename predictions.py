@@ -3,15 +3,15 @@ import tensorflow as tf
 from keras.preprocessing import image
 
 # load the models when import "predictions.py"
-#model_elbow_frac = tf.keras.models.load_model("weights/MobileNetV3_Elbow_frac.h5")
+model_elbow_frac = tf.keras.models.load_model("weights/MobileNetV3_Elbow_frac.h5")
 model_hand_frac = tf.keras.models.load_model("weights/MobileNetV3_Hand_frac.h5")
-#model_shoulder_frac = tf.keras.models.load_model("weights/MobileNetV3_Shoulder_frac.h5")
+model_shoulder_frac = tf.keras.models.load_model("weights/MobileNetV3_Shoulder_frac.h5")
 model_parts = tf.keras.models.load_model("weights/MobileNetV3_BodyParts.h5")
 
 # categories for each result by index
 
 #   0-Elbow     1-Hand      2-Shoulder
-categories_parts = [ "Hand"]
+categories_parts = ["Elbow","Hand","Shoulder"]
 
 #   0-fractured     1-normal
 categories_fracture = ['fractured', 'normal']
