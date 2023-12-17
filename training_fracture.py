@@ -182,6 +182,6 @@ def trainPart(part):
     plt.show()
 
 # Run the function for each part in the array
-categories_parts = [ "Hand"]
+categories_parts = ["Elbow","Hand","Shoulder"]
 for category in categories_parts:
     trainPart(category)
