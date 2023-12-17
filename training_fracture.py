@@ -157,11 +157,11 @@ def trainPart(part):
 
     history = model.fit(train_images, validation_data=val_images, epochs=50, callbacks=callbacks, batch_size=32)
 
-    model.save("weightsMobileNetV3_hand_frac.keras")
-    results = model.evaluate(test_images, verbose=0)
-    print(part + " Results:")
-    print(results)
-    print(f"Test Accuracy: {np.round(results[1] * 100, 2)}%")
+    model.save(THIS_FOLDER + "/weights/MobileNetV3_" + part + "_frac.h5")
+    test_labels = test_images.classes
+    predictions = model.predict(test_images).argmax(axis=-1)
+    accuracy = accuracy_score(test_labels, predictions)
+    print(f"Test Accuracy (using sklearn): {np.round(accuracy * 100, 2)}%")
 
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
