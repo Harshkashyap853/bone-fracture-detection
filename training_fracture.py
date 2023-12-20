@@ -102,11 +102,6 @@ def trainPart(part):
     train_df, test_df = train_test_split(images, train_size=0.9, shuffle=True, random_state=1)
 
     train_generator = tf.keras.preprocessing.image.ImageDataGenerator(
-        rotation_range=20,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        shear_range=0.2,
-        zoom_range=0.2,
         horizontal_flip=True,
         preprocessing_function=tf.keras.applications.mobilenet_v3.preprocess_input,
         validation_split=0.2
