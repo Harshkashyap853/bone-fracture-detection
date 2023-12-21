@@ -172,6 +172,10 @@ def trainPart(part):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'], loc='upper left')
     plt.show()
+    figAcc = plt.gcf()
+    my_file = os.path.join(THIS_FOLDER, "./plots/FractureDetection/" + part + "/_Accuracy.jpeg")
+    figAcc.savefig(my_file)
+    plt.clf()
 
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -180,6 +184,10 @@ def trainPart(part):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'], loc='upper left')
     plt.show()
+    figAcc = plt.gcf()
+    my_file = os.path.join(THIS_FOLDER, "./plots/FractureDetection/" + part + "/_Loss.jpeg")
+    figAcc.savefig(my_file)
+    plt.clf()
 
 # Run the function for each part in the array
 categories_parts = ["Elbow","Hand","Shoulder"]
