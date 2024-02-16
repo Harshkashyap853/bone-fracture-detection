@@ -8,16 +8,6 @@ from tensorflow.keras.optimizers import Adam
 import tf_slim as slim
 from sklearn.metrics import accuracy_score
 
-# load images to build and train the model
-#                       ....                                     /    img1.jpg
-#             test      Hand            patient0000   positive  --   img2.png
-#           /                /                         \    .....
-#   Dataset   -         Elbow  ------   patient0001
-#           \ train               \         /                           img1.png
-#                       Shoulder        patient0002     negative --      img2.jpg
-#                       ....                   \
-#
-
 def load_path(path, part):
     """
     load X-ray dataset
